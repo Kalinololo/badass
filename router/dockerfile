@@ -1,0 +1,14 @@
+FROM frrouting/frr:latest
+
+RUN     sed -i 's/^bgpd=no$/bgpd=yes/' /etc/frr/daemons && \
+        sed -i 's/^ospfd=no$/ospfd=yes/' /etc/frr/daemons && \
+        sed -i 's/^isisd=no$/isisd=yes/' /etc/frr/daemons
+
+# Expose ports if needed
+# EXPOSE 179
+
+# Set working directory
+WORKDIR /etc/frr
+
+# Start FRR
+CMD ["/usr/lib/frr/docker-start"]

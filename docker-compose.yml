@@ -1,0 +1,31 @@
+services:
+  router:
+    build:
+      context: ./router
+      dockerfile: dockerfile
+    container_name: router
+    restart: unless-stopped
+    networks:
+      - badass-network
+    ports:
+      - "80:80"
+      - "443:443"
+    # Add volumes if needed
+    # volumes:
+    #   - ./router/config:/etc/nginx/conf.d
+
+  alpine:
+    build:
+      context: ./apline
+      dockerfile: dockerfile
+    container_name: alpine
+    restart: unless-stopped
+    networks:
+      - badass-network
+    # Add volumes if needed
+    # volumes:
+    #   - ./alpine/data:/data
+
+networks:
+  badass-network:
+    driver: bridge

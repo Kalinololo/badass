@@ -1,0 +1,22 @@
+FROM alpine:latest
+
+# Install basic tools
+RUN apk update && \
+    apk add --no-cache \
+    util-linux \
+    bash \
+    curl \
+    wget \
+    iputils \
+    tcpdump \
+    iproute2 \
+    iperf3 \
+    mtr \
+    traceroute \
+    bind-tools
+
+# Set working directory
+WORKDIR /app
+
+# Keep container running
+CMD ["tail", "-f", "/dev/null"]
