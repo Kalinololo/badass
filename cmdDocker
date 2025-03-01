@@ -1,0 +1,2 @@
+cp /etc/frr/vtysh.conf.sample /etc/frr/vtysh.conf
+vi /etc/frr/daemons
