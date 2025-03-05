@@ -1,1 +1,2 @@
+# Set address of eth1 to 30.1.1.1
 ip addr add 30.1.1.1/24 dev eth1
