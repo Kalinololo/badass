@@ -1,0 +1,18 @@
+# Assign IP address 10.1.1.2/24 to interface eth0
+ip addr add 10.1.1.2/24 dev eth0
+
+# Create a VXLAN interface named vxlan10 (ID 10) on eth0
+ip link add name vxlan10 type vxlan id 10 dev eth0 local 10.1.1.2 remote 10.1.1.1 dstport 4789
+
+# Up the vxlan10 interface
+ip link set dev vxlan10 up
+
+# Create a bridge named br0
+ip link add br0 type bridge
+
+# Up the bridge
+ip link set dev br0 up
+
+# Add eth1 and vxlan10 to br0, allowing them to the layer 2
+brctl addif br0 eth1
+brctl addif br0 vxlan10
