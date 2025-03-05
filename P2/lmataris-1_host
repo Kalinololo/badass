@@ -1,0 +1,4 @@
+ip addr add 30.1.1.1/24 dev eth1
+ip link add br0 type bridge
+ip link set dev br0 up
+brctl addif br0 eth1
