@@ -1,0 +1,63 @@
+Router P2 explain :
+     1️⃣ Assignation d’une adresse IP à eth0
+    ip addr add 10.1.1.1/24 dev eth0
+    ✅ Pourquoi ?
+    On assigne l’adresse IP 10.1.1.1 avec un masque /24 (soit 255.255.255.0) à l’interface eth0.
+    Cela permet à la machine de communiquer avec d'autres machines dans le même sous-réseau (10.1.1.0/24).
+
+    2️⃣ Création de l’interface VXLAN
+    ip link add name vxlan10 type vxlan id 10 dev eth0 local 10.1.1.1 remote 10.1.1.2 dstport 4789
+    ✅ Pourquoi ?
+    On crée une interface virtuelle de type VXLAN, qui encapsule du trafic Ethernet dans des paquets UDP pour transporter du trafic Layer 2 (L2) sur un réseau Layer 3 (L3).
+
+    📌 Explication des paramètres :
+
+    name vxlan10 → Nom de l’interface VXLAN.
+    type vxlan → Indique qu’il s’agit d’un tunnel VXLAN.
+    id 10 → Identifiant du VXLAN (VNI = VXLAN Network Identifier), utilisé pour isoler plusieurs VXLANs.
+    dev eth0 → Interface physique qui transporte le VXLAN.
+    local 10.1.1.1 → Adresse IP locale du routeur qui envoie les paquets VXLAN.
+    remote 10.1.1.2 → Adresse IP de l’autre extrémité du tunnel VXLAN (le second routeur par exemple).
+    dstport 4789 → Port UDP utilisé pour le VXLAN (standard IANA).
+    En gros, on crée un tunnel entre 10.1.1.1 et 10.1.1.2 qui va transporter du trafic de niveau 2.
+
+    3️⃣ Activation de l’interface VXLAN
+    ip link set dev vxlan10 up
+    ✅ Pourquoi ?
+    L’interface VXLAN est créée mais désactivée par défaut. Cette commande l’active.
+
+    4️⃣ Création d’un bridge (br0)
+    ip link add br0 type bridge
+    ✅ Pourquoi ?
+    On crée un switch virtuel (br0), qui va permettre d’interconnecter des interfaces comme vxlan10 et eth1.
+    Un bridge fonctionne comme un switch de niveau 2 : il apprend les adresses MAC et transfère les paquets en fonction de la table MAC.
+
+    5️⃣ Activation du bridge
+    ip link set dev br0 up
+    ✅ Pourquoi ?
+    Comme pour vxlan10, on active br0, sinon il ne fonctionnera pas.
+
+    6️⃣ Ajout des interfaces au bridge
+    brctl addif br0 eth1
+    brctl addif br0 vxlan10
+    ✅ Pourquoi ?
+    On connecte eth1 et vxlan10 au bridge br0, ce qui signifie :
+
+    Tout le trafic venant de eth1 sera transféré via br0.
+    Tout le trafic venant de vxlan10 passera aussi par br0.
+    🔗 Ce que ça fait concrètement :
+
+    eth1 est probablement une interface connectée à un réseau local.
+    vxlan10 est un tunnel vers un autre routeur.
+    Le bridge br0 permet d'interconnecter eth1 et vxlan10 comme s'ils étaient dans le même switch.
+    Cela permet de faire transiter du trafic de niveau 2 (MAC) entre des machines distantes via VXLAN.
+    📌 Résumé global
+    Cette configuration :
+
+    Assigne une IP à eth0 pour permettre la communication.
+    Crée un tunnel VXLAN entre 10.1.1.1 et 10.1.1.2 pour transporter du trafic Ethernet encapsulé en UDP.
+    Active le VXLAN et crée un bridge (br0).
+    Ajoute eth1 et vxlan10 au bridge pour qu’ils puissent échanger du trafic L2.
+    ➡️ Ça permet d’étendre un réseau Ethernet à travers un tunnel VXLAN au-dessus d’un réseau IP classique.
+
+    💡 En gros, c'est comme si tu avais un long câble Ethernet virtuel entre tes deux routeurs, même s'ils sont situés sur des réseaux IP différents. 🚀
