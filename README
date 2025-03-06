@@ -61,3 +61,151 @@ Router P2 explain :
     ➡️ Ça permet d’étendre un réseau Ethernet à travers un tunnel VXLAN au-dessus d’un réseau IP classique.
 
     💡 En gros, c'est comme si tu avais un long câble Ethernet virtuel entre tes deux routeurs, même s'ils sont situés sur des réseaux IP différents. 🚀
+
+Router P3 explain : 
+     🔹 1. Entrer en mode de configuration
+     vtysh < router_lmataris-1_config
+     💡 Pourquoi ?
+     → Charge le fichier router_lmataris-1_config directement dans vtysh, l'interface CLI de FRRouting (FRR).
+     → Applique la configuration au routeur.
+
+     configure terminal
+     💡 Pourquoi ?
+     → Passe en mode configuration pour modifier les paramètres du routeur.
+
+     🔹 2. Désactiver le routage IPv6
+     no ipv6 forwarding
+     💡 Pourquoi ?
+     → On désactive IPv6 car ce réseau est basé uniquement sur IPv4.
+     → Cela empêche le routeur de transférer des paquets IPv6.
+
+     🔹 3. Configuration des interfaces réseau
+     🔸 Interface eth0
+
+     interface eth0
+     ip address 10.1.1.1/30
+     exit
+     💡 Pourquoi ?
+     → Assigne 10.1.1.1/30 à l’interface eth0 pour une liaison point-à-point.
+     → Un /30 permet uniquement deux hôtes (ex: 10.1.1.1 et 10.1.1.2), idéal pour des connexions directes entre routeurs.
+
+     🔸 Interface eth1
+
+     interface eth1
+     ip address 10.1.1.5/30
+     exit
+     💡 Pourquoi ?
+     → eth1 est un autre lien point-à-point, avec l’IP 10.1.1.5/30.
+
+     🔸 Interface eth2
+
+     interface eth2
+     ip address 10.1.1.9/30
+     exit
+     💡 Pourquoi ?
+     → eth2 est configurée avec 10.1.1.9/30, connectée à un autre routeur.
+
+     🔸 Interface Loopback (lo)
+
+     interface lo
+     ip address 1.1.1.1/32
+     exit
+     💡 Pourquoi ?
+     → 1.1.1.1/32 est une IP unique utilisée pour identifier ce routeur en BGP.
+     → Permet aux sessions BGP de rester actives même si une interface physique tombe.
+
+     🔹 4. Configuration de BGP (Border Gateway Protocol)
+
+     router bgp 1
+     💡 Pourquoi ?
+     → Démarre le processus BGP avec l'AS (Autonomous System) 1.
+     → Tous les routeurs partageant cet AS forment une fédération iBGP.
+
+     🔸 Création d’un groupe de voisins dynamique
+
+     neighbor DYNAMIC peer-group
+     💡 Pourquoi ?
+     → Crée un groupe de voisins BGP dynamique pour éviter d’ajouter chaque voisin manuellement.
+
+
+     neighbor DYNAMIC remote-as 1
+     💡 Pourquoi ?
+     → Tous les voisins du groupe DYNAMIC font partie du même AS (1), donc relation iBGP.
+
+ 
+     neighbor DYNAMIC update-source lo
+     💡 Pourquoi ?
+     → Les sessions BGP utiliseront l’interface loopback (1.1.1.1) comme source.
+     → Cela assure la stabilité des sessions, même si une interface physique tombe.
+
+     🔸 Écoute dynamique des voisins
+
+     bgp listen range 1.1.1.0/24 peer-group DYNAMIC
+     💡 Pourquoi ?
+     → Tous les routeurs ayant une IP dans 1.1.1.0/24 sont automatiquement ajoutés au groupe DYNAMIC.
+     → Pas besoin de configurer manuellement chaque voisin.
+
+     🔹 5. Activation d’EVPN (Ethernet VPN)
+
+     address-family l2vpn evpn
+     💡 Pourquoi ?
+     → Active EVPN, un protocole qui permet de transporter des MAC adresses via BGP (utile pour VXLAN).
+
+     neighbor DYNAMIC activate
+     💡 Pourquoi ?
+     → Active EVPN pour les voisins du groupe DYNAMIC.
+
+     neighbor DYNAMIC route-reflector-client
+     💡 Pourquoi ?
+     → Configure ce routeur comme Route Reflector (RR).
+     → Un RR évite d’avoir une topologie full-mesh en iBGP, ce qui simplifie la gestion du réseau.
+
+     exit-address-family
+     exit
+     💡 Pourquoi ?
+     → Termine la configuration BGP.
+
+     🔹 6. Configuration de OSPF (Open Shortest Path First)
+     bash
+     Copier
+     Modifier
+     router ospf
+     💡 Pourquoi ?
+     → Active le protocole de routage OSPF.
+     → OSPF est utilisé pour transporter les routes sous-jacentes afin que BGP puisse fonctionner correctement.
+
+     bash
+     Copier
+     Modifier
+     network 0.0.0.0/0 area 0
+     💡 Pourquoi ?
+     → Cette ligne annonce toutes les interfaces (0.0.0.0/0) dans l’aire 0 (backbone OSPF).
+     → Permet une connectivité interne entre les routeurs avant que BGP ne prenne le relais.
+
+     bash
+     Copier
+     Modifier
+     exit
+     💡 Pourquoi ?
+     → Quitte la configuration OSPF.
+
+     📌 Résumé visuel de la configuration
+     Section	Explication
+     Mode config	Entre dans le mode de configuration.
+     IPv6 OFF	On désactive IPv6 car on utilise uniquement IPv4.
+     Interfaces	On attribue des adresses IP aux interfaces Ethernet et Loopback.
+     BGP	On configure le routeur en BGP AS 1, avec des voisins dynamiques et un Route Reflector.
+     EVPN	On active EVPN pour échanger des MAC adresses avec BGP.
+     OSPF	OSPF assure la connectivité entre les routeurs avant que BGP ne soit opérationnel.
+     🚀 Pourquoi cette configuration est importante ?
+     ✅ iBGP avec Route Reflector → Réduit le besoin d’une topologie full-mesh.
+     ✅ EVPN via BGP → Permet d’échanger des adresses MAC et de gérer le VXLAN.
+     ✅ OSPF pour la connectivité → Facilite l’échange des routes internes avant BGP.
+     ✅ Écoute dynamique BGP → Simplifie la gestion des voisins BGP.
+
+
+
+
+
+
+
